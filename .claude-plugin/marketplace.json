@@ -1,0 +1,1 @@
+{"$schema":"https://json.schemastore.org/claude-code-marketplace.json","name":"lhg-plugs","owner":{"name":"刘洪光"},"plugins":[{"description":"毕业论文助手：开题到盲审的写作流水线（开题大纲 / 分章写作 / GB/T 7714 引用 / 盲审模拟），学术诚信先行","name":"lhg-thesis","source":"./"}]}
