@@ -1,95 +1,114 @@
 <!-- About 简介（推送后填写到仓库 About 栏）：
-毕业论文助手：开题到盲审的写作流水线 ｜ 一键安装：/plugin marketplace add lhg-plugs/lhg-thesis
+毕业论文助手：开题→大纲→分章写作→交叉引用审计→查重前自查→盲审模拟，一条写作流水线；写作助手定位，学术诚信先行。 ｜ 一键安装：/plugin marketplace add lhg-plugs/lhg-thesis
 -->
-<!-- topics（推送后打）：claude-code, claude-plugin, agent-skills, thesis, academic-writing, latex -->
+<!-- topics（推送后打）：claude-code, claude-plugin, agent-skills, thesis, academic-writing, graduation, citation, latex -->
 
-# lhg-thesis：毕业论文助手，开题到盲审的写作流水线
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="lhg-thesis — 毕业论文助手">
+</p>
 
-> ## 学术诚信声明
->
-> 本插件是**写作助手**，不是代写工具。它帮你搭框架、顺逻辑、查格式、模拟评审，
-> 但**论文的观点、数据、结论必须是你的原创**。
-> 使用本插件即表示你承诺遵守所在学校的学术规范，不抄袭、不编造数据、不伪造引用。
-> 涉及学术不端的请求（如"帮我编几篇参考文献""数据不好看帮我改改"），本插件一律拒绝。
+> **一句话介绍**：毕业论文助手：开题→大纲→分章写作→交叉引用审计→查重前自查→盲审模拟，一条写作流水线；写作助手定位，学术诚信先行。
 
-> **一句话介绍**：给 AI 编程助手装上"毕业论文流水线"——开题→大纲→分章写作→交叉引用审计→查重前自查→盲审模拟，GB/T 7714 引用格式脚本校验，学术诚信先行。
->
-> **一键安装**：在 Claude Code 里运行
-> ```
-> /plugin marketplace add lhg-plugs/lhg-thesis
-> /plugin install lhg-thesis@lhg-plugs
-> ```
+**一键安装**：在 Claude Code 里运行
+
+```bash
+/plugin marketplace add lhg-plugs/lhg-thesis
+/plugin install lhg-thesis@lhg-plugs
+```
+
+## 它能帮你做出什么
+
+每条产出先过确定性脚本自查，再交人工复核清单——数字全部数自仓库里的审计脚本，不靠模型"自觉"。
+
+| 自查脚本 | 规则数 | blocker | warning | nit | 覆盖 |
+|---|---|---|---|---|---|
+| `scripts/audit/cite_audit.py` | 5 | 2 | 3 | 0 | 引用 |
+| `scripts/audit/structure_audit.py` | 7 | 1 | 5 | 1 | 结构、图表、重复 |
+| **合计** | **12** | **3** | **8** | **1** | |
+
+- **零 LLM 成本**：规则是纯 Python 脚本，零第三方依赖，本地运行。
+- **坏 / 好对照可验**：`fixtures/` 里备有坏/好用例，冒烟测试断言命中情况。
+- **冒烟全绿**：`python3 smoke_test.py` 53 项全部通过（JSON 合法、frontmatter 完整、命令/skill/agent 齐全）。
 
 ## 它是什么
 
 `lhg-thesis` 是一个 Claude Code 插件（plugin 为主、skill 为辅）：
 
-- **3 个命令**（小白入口）：`thesis` 全流程流水线，`thesis-cite` 引用专项，`thesis-audit` 结构体检
-- **4 个平台中立 skill**（方法论，可移植到豆包/Workbuddy 等 agent 平台）：开题与大纲、分章写作（含去 AI 味 20 条清单）、GB/T 7714 引用规范、盲审模拟
-- **2 个专家 agent**：分章写作专家、盲审模拟专家
-- **2 个 hooks**：送审/导出/提交前审计拦截（硬门，可一键豁免）、写章节时幽灵引用提醒（警告级）
-- **12 条确定性审计规则**：纯 Python、零第三方依赖
+- **3 个命令**（小白入口）：`thesis` 毕业论文全流程、`thesis-audit` 论文体检、`thesis-cite` 引用专项
+- **4 个平台中立 skill**（方法论，可移植到豆包/Workbuddy 等 agent 平台）：lhg-th-cite, lhg-th-proposal, lhg-th-review, lhg-th-writing
+- **2 个专家 agent**：reviewer, writer
+- **2 个 hooks**（`hooks/`：post_write_cite_warn.py, pre_submit_audit.py），关键操作前自动把关
+- **12 条确定性自查规则**：纯 Python 脚本，见上表
 
-## 3 个命令用法
+## 为什么是它
+
+不是一个 prompt，而是一套互相兜底的机制：
+
+1. **确定性脚本（机器）+ 人工复核清单（人）**：先跑 `scripts/` 下的审计脚本（共 12 条规则），发现分三级：**blocker**（必须修）、**warning**（修或写豁免理由）、**nit**（顺手修）；再按对应 skill 的复核清单过一遍脚本抓不到的（内容真实性、越权、口径一致）。blocker 清零才算做完；为清零改规则算作弊，不许。
+2. **硬门，不是提醒**：hooks 在关键操作前自动拦截或警告（见 `hooks/`），而不是只在文档里写一句"请注意"。
+3. **方法论沉淀在 skill 里**：流程、检查清单、口径都写在 `skills/` 的方法论里，命令只是入口；换个 agent 平台也能复用同一套做法。
+4. **可验，不是可信**：`fixtures/` 备有坏/好对照用例，`smoke_test.py` 一键验证，规则有没有生效、自己跑一遍就知道。
+
+## 快速上手
+
+```bash
+# 1. 安装（Claude Code 里运行）
+/plugin marketplace add lhg-plugs/lhg-thesis
+/plugin install lhg-thesis@lhg-plugs
+
+# 2. 毕业论文全流程：开题→大纲→分章写作→交叉引用审计→查重前自查→盲审模拟。写作助
+/lhg-thesis:thesis "大模型在作业批改中的应用"
+```
 
 | 命令 | 作用 | 示例 |
 |---|---|---|
-| `/lhg-thesis:thesis` | 开题→大纲→分章写作→引用审计→查重前自查→盲审模拟，全流程 | `/lhg-thesis:thesis "大模型在作业批改中的应用"` |
-| `/lhg-thesis:thesis-cite` | 引用专项：GB/T 7714 校验、幽灵引用/僵尸条目排查 | `/lhg-thesis:thesis-cite ./my-thesis` |
-| `/lhg-thesis:thesis-audit` | 结构体检：缺章、图表跳号、文本重叠率估算 | `/lhg-thesis:thesis-audit ./my-thesis` |
+| `/lhg-thesis:thesis` | 毕业论文全流程：开题→大纲→分章写作→交叉引用审计→查重前自查→盲审模拟。写作助手定位，学术诚信先行。 | `/lhg-thesis:thesis "大模型在作业批改中的应用"` |
+| `/lhg-thesis:thesis-audit` | 论文体检：章节结构完整性、图表编号连续性、文本重复率启发式估算，输出分级报告。 | `/lhg-thesis:thesis-audit ./my-thesis` |
+| `/lhg-thesis:thesis-cite` | 引用专项：GB/T 7714 格式校验、幽灵引用/僵尸条目排查、引用与论点对应检查。 | `/lhg-thesis:thesis-cite ./my-thesis` |
+
+## 什么时候用 / 什么时候不用（FAQ）
+
+**什么时候用：**
+
+- 你需要毕业论文全流程时 → 用 `/lhg-thesis:thesis`
+- 你需要论文体检时 → 用 `/lhg-thesis:thesis-audit`
+- 你需要引用专项时 → 用 `/lhg-thesis:thesis-cite`
+
+**什么时候不用：**
+
+- 你只需要其中一个零散能力时 → 本插件是成套流程，单点需求用更轻量的 skill 更合适
+- 你希望 AI 完全自由发挥、不接受任何自查与硬门时 → 它的规则审计与 hooks 会介入（可关，但那就别装它）
+- 你的场景不在上面命令表覆盖范围内时 → 先看命令表，没有对应命令就别硬套
 
 ## 目录结构
 
 ```
 lhg-thesis/
-├── .claude-plugin/          # plugin.json（插件清单）+ marketplace.json（本仓即市场）
-├── commands/                # 3 个命令：thesis / thesis-cite / thesis-audit
-├── skills/                  # 4 个平台中立 skill（开题大纲/分章写作/引用规范/盲审模拟）
-├── agents/                  # 2 个专家 agent（writer / reviewer）
-├── hooks/                   # 送审拦截 + 幽灵引用提醒（均可一键关闭）
-├── scripts/audit/           # 确定性审计：cite_audit.py + structure_audit.py（零第三方依赖）
-├── fixtures/                # 好/坏论文对照用例
-├── smoke_test.py            # 冒烟测试（53 项）
-├── ATTRIBUTION.md           # 灵感来源声明
-└── LICENSE                  # MIT
+├── smoke_test.py          # 一键冒烟测试
+├── ATTRIBUTION.md         # 灵感来源与许可声明
+├── LICENSE                # MIT
+├── README.md              # 本文件
+├── .claude-plugin/
+├── agents/
+├── commands/
+├── fixtures/
+├── hooks/
+├── scripts/
+├── skills/
 ```
 
-## 论文目录约定
+## 自检与反馈
 
-```
-my-thesis/
-├── thesis.yaml          # 题目/作者/学校/日期（可选，有它 hook 识别更准）
-├── chapters/
-│   ├── 01-摘要.md
-│   ├── 02-绪论.md
-│   └── ...
-├── references.bib       # BibTeX 参考文献
-└── figures/             # 图片（可选）
-```
+本插件自带质检：每次使用后可跑 `python3 smoke_test.py` 一键验证（本次实测 53 项全部通过）。
 
-## 什么时候用 / 什么时候不用（FAQ）
+发现 bug 或有改进建议，以 `[QC] <一句话问题>` 为标题提交到 https://github.com/lhg-plugs/lhg-thesis/issues，正文写清"复现步骤 → 实际表现 → 期望表现"。
 
-**Q：各校格式要求不一样，这个插件能用吗？**
-A：能，但要摆正位置。本插件给的是**通用底线**（GB/T 7714 著录框架、结构完整性、引用对应关系），各校模板的细则（标点全角半角、作者列几位、页眉页脚）**以学校模板为准**，插件里的 skill 和命令都写了这条。建议先把学校模板喂给 AI，再跑流程。
-
-**Q：能保证查重率吗？**
-A：**不能，也不承诺**。`structure_audit.py` 的 REP 规则是"章节间文本重叠率启发式估算"（8 字滑窗），只能定位疑似高重叠段落，**不是**学校查重系统的重复率。报告里会明确写清这一点，任何把它包装成"查重 X%"的说法都是不诚实的。
-
-**Q：这是代写工具吗？**
-A：不是。本插件是写作助手：框架、逻辑、格式、评审模拟可以帮你，但观点、数据、结论必须是你的。编造文献/数据的请求会被直接拒绝。首次使用 `/thesis` 会请你明确承诺遵守学术规范。
-
-**Q：支持 LaTeX 吗？**
-A：支持。引用标记同时识别 `[@key]`（Markdown）和 `\cite{key}`（LaTeX）；审计脚本不依赖编译环境。导出排版（pandoc/xelatex）在论文目录下会触发送审前审计硬门。
-
-**Q：一定要用 Claude Code 吗？**
-A：`skills/` 下的方法论是平台中立的纯 Markdown，可直接搬到豆包、Workbuddy 等 agent 平台用。只有 commands/agents/hooks 需要 Claude Code。
-
-## 自迭代
-
-- 每个 skill 末尾有「自检与反馈」节：质检门 + 标准冒烟用例 + 一键提 issue。
-- 发现规则误报/漏报、方法论不合理：到本仓库提 issue（标题带对应 skill 前缀，如 `[lhg-th-cite]`），附论文类型（本/硕/博）与场景描述。
+同门插件见 [lhg-plugs](https://github.com/lhg-plugs)，86 个插件的完整矩阵在 [marketplace](https://github.com/lhg-plugs/marketplace) 维护。
 
 ## 出品：刘洪光
 
-刘洪光（https://github.com/lhg-skills）出品，lhg-plugs「小白专家插件」系列之一。
-灵感来源见 [ATTRIBUTION.md](./ATTRIBUTION.md)（借鉴思路，实现与文案均为原创）。
+本插件由真人出镜 IP「刘洪光」（安徽合肥）出品，归属 [lhg-skills](https://github.com/lhg-skills)。
+
+- GitHub 主页：https://github.com/lhg-skills —— 全部 skill 开源在此，欢迎 star
+- 抖音：搜「刘老师讲AI实战」
+- 微信：lhgsmsw
